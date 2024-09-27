@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload and Play HLS</title>
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        :root {
+            --plyr-color-main: red !important;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Upload Video</h1>
+    <form id="uploadForm">
+        <input type="file" id="videoFile" accept="video/*" required />
+        <button type="submit">Upload</button>
+    </form>
+
+    <video id="player" class="video-js" controls preload="auto">
+        <source id="videoSource" type="application/x-mpegURL">
+    </video>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <script>
+        const vid = '7a03eb81a5fb3421ea786c4f8ee89877'
+
+        const playerEl = document.getElementById('player');
+        const videoSource = document.getElementById('videoSource');
+
+        var player;
+        const defaultOptions = {}
+        const hls = new Hls();
+
+        if (Hls.isSupported()) {
+            hls.loadSource(`/hls/${vid}/240p/index.m3u8`)
+            hls.on(Hls.Events.MEDIA_ATTACHED, (e, data) => {
+                defaultOptions.quality = {
+                    default: 1080,
+                    options: [
+                        0,
+                        240,
+                        360,
+                        480,
+                        720,
+                        1080
+                    ],
+                    forced: true,
+                    onChange: updateQuality
+                }
+                defaultOptions.i18n = {
+                    qualityLabel: {
+                        0: "Auto",
+                    },
+                }
+                player = new Plyr(playerEl, defaultOptions)
+            })
+            hls.attachMedia(playerEl);
+            window.hls = hls
+        }
+
+
+        function updateQuality(quality) {
+            // return
+            const newSource = `/hls/${vid}/${quality}p/index.m3u8`;
+
+            // Simpan waktu saat ini sebelum mengganti kualitas
+            const currentTime = playerEl.currentTime;
+            const wasPlaying = !playerEl.paused; // Mengecek apakah video sedang diputar
+
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(newSource);
+                hls.attachMedia(playerEl);
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    // Set waktu ke posisi terakhir
+                    playerEl.currentTime = currentTime;
+
+                    // Jika video sebelumnya sedang diputar, lanjutkan
+                    if (wasPlaying) {
+                        playerEl.play();
+                    }
+                });
+            } else if (playerEl.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari native HLS support
+                videoSource.src = newSource;
+                playerEl.load();
+
+                // Mengatur kembali waktu ke posisi terakhir
+                playerEl.currentTime = currentTime;
+
+                // Jika sebelumnya sedang diputar, lanjutkan
+                if (wasPlaying) {
+                    playerEl.play();
+                }
+            } else {
+                console.error('HLS tidak didukung di browser ini');
+            }
+        }
+
+
+
+        const videoContainer = document.getElementById('my-video');
+        const uploadForm = document.getElementById('uploadForm');
+        uploadForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            const videoFile = document.getElementById('videoFile').files[0];
+            formData.append('video', videoFile);
+
+            fetch('/upload/v1', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+
+    <link href="https://vjs.zencdn.net/7.11.4/video-js.css" rel="stylesheet" />
+
+    <video id="my-video" class="video-js" controls preload="auto" width="640" height="264" data-setup="{}">
+        <source src="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" type="application/x-mpegURL" />
+    </video>
+
+    <script src="https://vjs.zencdn.net/7.11.4/video.js"></script>
+
+    <input type="file" id="videoFile" />
+    <button onclick="uploadFile()">Upload Video</button>
+
+    <script>
+        var player = videojs('my-video');
+
+        player.on('error', function () {
+            var error = player.error();
+            console.log('Video.js error:', error);
+        });
+
+    </script>
+
+    <script>
+
+        async function uploadVideo(file) {
+            const chunkSize = 10 * 1024 * 1024; // Ukuran chunk 1 MB
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            const videoId = new Date().getTime(); // Gunakan timestamp sebagai videoId
+
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * chunkSize;
+                const end = Math.min(start + chunkSize, file.size);
+                const chunk = file.slice(start, end);
+
+                const formData = new FormData();
+                formData.append('chunk', chunk);
+                formData.append('chunkIndex', i);
+                formData.append('totalChunks', totalChunks);
+                formData.append('videoId', videoId);
+
+                try {
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    const data = await response.json();
+                    console.log(data.message);
+                } catch (error) {
+                    console.error('Error uploading chunk:', error);
+                }
+            }
+        }
+
+        // Menggunakan fungsi uploadVideo
+        const fileInput = document.querySelector('input[type="file"]');
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            uploadVideo(file);
+        });
+    </script>
+
+
+</body>
+
+</html>
