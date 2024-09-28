@@ -19,15 +19,54 @@
         <input type="file" id="videoFile" accept="video/*" required />
         <button type="submit">Upload</button>
     </form>
+    <button id="uploadChunk">Upload Chunk</button>
 
     <video id="player" class="video-js" controls preload="auto">
         <source id="videoSource" type="application/x-mpegURL">
     </video>
 
+
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+
+
     <script>
-        const vid = '7a03eb81a5fb3421ea786c4f8ee89877'
+        async function uploadVideo(file) {
+            console.log(file);
+            const chunkSize = 30 * 1024 * 1024; // Ukuran chunk 1 MB
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            const videoId = new Date().getTime(); // Gunakan timestamp sebagai videoId
+
+            for (let i = 0; i < totalChunks; i++) {
+                const start = i * chunkSize;
+                const end = Math.min(start + chunkSize, file.size);
+                const chunk = file.slice(start, end);
+
+                const formData = new FormData();
+                formData.append('chunk', chunk);
+                formData.append('chunkIndex', i);
+                formData.append('totalChunks', totalChunks);
+                formData.append('videoId', videoId);
+                formData.append('fileName', file.name);
+
+                try {
+                    const response = await fetch('/v3/upload/v3', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    const data = await response.json();
+                    console.log(data.message);
+                } catch (error) {
+                    console.error('Error uploading chunk:', error);
+                }
+            }
+        }
+
+    </script>
+
+    <script>
+        const vid = document.location.hash.replace('#', '')
 
         const playerEl = document.getElementById('player');
         const videoSource = document.getElementById('videoSource');
@@ -38,6 +77,7 @@
 
         if (Hls.isSupported()) {
             hls.loadSource(`/hls/${vid}/240p/index.m3u8`)
+            // hls.loadSource('/v3/hlsv2/1080p/index.m3u8')
             hls.on(Hls.Events.MEDIA_ATTACHED, (e, data) => {
                 defaultOptions.quality = {
                     default: 1080,
@@ -47,7 +87,8 @@
                         360,
                         480,
                         720,
-                        1080
+                        1080,
+                        1440
                     ],
                     forced: true,
                     onChange: updateQuality
@@ -106,6 +147,13 @@
 
         const videoContainer = document.getElementById('my-video');
         const uploadForm = document.getElementById('uploadForm');
+        const uploadChunk = document.getElementById('uploadChunk');
+
+        const fileInput = document.querySelector('input[type="file"]');
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            uploadVideo(file);
+        });
         uploadForm.addEventListener('submit', function (event) {
             event.preventDefault();
 

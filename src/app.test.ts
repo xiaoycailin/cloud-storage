@@ -7,8 +7,8 @@ import axios from 'axios'
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const UPLOAD_DIR = path.join(__dirname, 'uploads').replace('\\src\\', '\\');
-console.log(UPLOAD_DIR);
+const UPLOAD_DIR = path.join(__dirname, 'uploads', 'chunks').replace('\\src\\', '\\');
+// console.log(UPLOAD_DIR);
 app.use(cors({
     origin: ''
 }))
