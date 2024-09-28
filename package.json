@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node -r dotenv/config ./dist/app.js",
-    "pm2": "node -r dotenv/config ./dist/app.js",
+    "start": "node -r ./dist/app.js",
+    "pm2": "node -r ./dist/app.js",
     "dev": "nodemon -r ./src/app.ts",
     "build": "npx tsc"
   },
