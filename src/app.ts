@@ -7,7 +7,7 @@ import UploadV3Router from './router/upload.v3';
 import appconfig from './appconfig';
 
 const app = express();
-const upload = multer({ dest: '../@storage/uploads/videos' });
+const upload = multer({ dest: appconfig.uploadPath });
 app.use('/v3', UploadV3Router)
 app.post('/upload/v1', upload.single('video'), async (req, res) => {
     const outputDir = `uploads/hls/${req.file?.filename}`;
@@ -67,7 +67,7 @@ app.post('/upload/v1', upload.single('video'), async (req, res) => {
 // })
 
 app.get('/', (req, res) => {
-    res.sendfile('D:/proxy-dailymotion/public/index.html');
+    res.sendfile('public/index.html');
 })
 app.use('/hls', express.static(appconfig.uploadPath + '/hls'));
 
